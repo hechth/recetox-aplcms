@@ -76,10 +76,10 @@ fill_missing_values <- function(orig.feature, this.feature) {
 }
 
 #' @export
-compute_template <- function(extracted_features) {
+compute_template <- function(extracted_features, sample_names) {
   num.ftrs <- sapply(extracted_features, nrow)
   template_id <- which.max(num.ftrs)
-  template <- extracted_features[[template_id]]$sample_id[1]
+  template <- sample_names[template_id]
   message(paste("the template is sample", template))
 
   candi <- tibble::as_tibble(extracted_features[[template_id]]) |> dplyr::select(c(mz, rt))
@@ -88,21 +88,22 @@ compute_template <- function(extracted_features) {
 }
 
 #' @export
-correct_time <- function(this.feature, template_features, mz_tol_relative, rt_tol_relative) {
+correct_time <- function(this.feature, sample_name, template_features, mz_tol_relative, rt_tol_relative) {
     orig.features <- this.feature
     template <- unique(template_features$sample_id)[1]
-    j <- unique(this.feature$sample_id)[1]
 
-    if (j != template) {
+    if (sample_name != template) {
       this.comb <- compute_comb(template_features, this.feature)
       sel <- compute_sel(this.comb, mz_tol_relative, rt_tol_relative)
 
       if (length(sel) < 20) {
         stop("too few, aborted")
       } else {
-        all.ftr.table <- compute_template_adjusted_rt(this.comb, sel, j)
+        all.ftr.table <- compute_template_adjusted_rt(this.comb, sel, sample_name)
+        
         # the to be adjusted time
         this.diff <- all.ftr.table[, 2]
+        
         # the difference between the true time and the to-be-adjusted time
         avg_time <- all.ftr.table[, 1] - this.diff
         this.feature <- compute_corrected_features(this.feature, this.diff, avg_time)

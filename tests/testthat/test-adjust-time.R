@@ -8,7 +8,7 @@ patrick::with_parameters_test_that(
     })
 
     extracted <- lapply(filenames, arrow::read_parquet)
-    template_features <- compute_template(extracted)
+    template_features <- compute_template(extracted, files)
 
     expected <- file.path(testdata, "template", "RCX_shortened.parquet")
     expected <- arrow::read_parquet(expected)
@@ -35,6 +35,7 @@ patrick::with_parameters_test_that(
 
     corrected <- correct_time(
       this.feature = extracted,
+      sample_name = .test_name,
       template_features = template_features,
       mz_tol_relative = mz_tol_relative,
       rt_tol_relative = rt_tol_relative
