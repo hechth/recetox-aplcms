@@ -867,6 +867,68 @@ normix.bic <- function(x, y, do.plot = FALSE, bw = c(15, 30, 60), eliminate = .0
   return(rec)
 }
 
+#' Generate peak shape parameters for this feature group
+#' @param feature_group A dataframe with columns of m/z, rt, and intensity.
+#' @param base.curve A dataframe with columns of rt and intensity.
+#' @export
+estimate_peak_parameters <- function(
+  feature_group,
+  base.curve,
+  all_diff_mean_rts,
+  peak_parameters,
+  bandwidth,
+  min_bandwidth,
+  max_bandwidth,
+  sigma_ratio_lim,
+  shape_model,
+  peak_estim_method,
+  moment_power,
+  component_eliminate,
+  BIC_factor,
+  aver_diff
+  ) {
+  num_features <- nrow(feature_group)
+  if (num_features < 2) {
+    time_weights <- all_diff_mean_rts[which(base.curve[, "base.curve"] %in% feature_group[2])]
+    rt_peak_shape <- c(feature_group[1], feature_group[2], NA, NA, feature_group[3] * time_weights)
+    peak_parameters <- rbind(peak_parameters, rt_peak_shape)
+  } else {
+    # find bandwidth for these particular range
+    rt_range <- range(feature_group[, "rt"])
+    bw <- min(max(bandwidth * (max(rt_range) - min(rt_range)), min_bandwidth), max_bandwidth)
+    bw <- seq(bw, 2 * bw, length.out = 3)
+    if (bw[1] > 1.5 * min_bandwidth) {
+      bw <- c(max(min_bandwidth, bw[1] / 2), bw)
+    }
+
+    rt_profile <- compute_chromatographic_profile(feature_group, base.curve)
+    if (shape_model == "Gaussian") {
+      rt_peak_shape <- compute_gaussian_peak_shape(rt_profile, bw, component_eliminate, BIC_factor, aver_diff)
+    } else {
+      rt_peak_shape <- bigauss.mix(
+        rt_profile,
+        sigma_ratio_lim = sigma_ratio_lim,
+        bw = bw,
+        moment_power = moment_power,
+        peak_estim_method = peak_estim_method,
+        eliminate = component_eliminate,
+        BIC_factor = BIC_factor
+      )$param[, c(1, 2, 3, 5)]
+    }
+
+    if (is.null(nrow(rt_peak_shape))) {
+      peak_parameters <- rbind(peak_parameters, c(median(feature_group[, "mz"]), rt_peak_shape))
+    } else {
+      for (m in 1:nrow(rt_peak_shape))
+      {
+        rt_diff <- abs(feature_group[, "rt"] - rt_peak_shape[m, 1])
+        peak_parameters <- rbind(peak_parameters, c(mean(feature_group[which(rt_diff == min(rt_diff)), 1]), rt_peak_shape[m, ]))
+      }
+    }
+  }
+  return(peak_parameters)
+}
+
 #' Generate feature table from noise-removed LC/MS profile.
 #' @description
 #' Each LC/MS profile is first processed by the function remove_noise() to remove noise and reduce data size. A matrix containing m/z
@@ -917,7 +979,7 @@ prof.to.features <- function(profile,
   base.curve <- cbind(base.curve, base.curve * 0)
   
   all_diff_mean_rts <- compute_delta_rt(base.curve[, 1]) # computes diff of mean values from consecutive values 
-  aver_diff <- mean(diff(base.curve))  
+  aver_diff <- mean(diff(base.curve))
 
   keys <- c("mz", "rt", "sd1", "sd2", "area")
   peak_parameters <- matrix(0, nrow = 0, ncol = length(keys), dimnames = list(NULL, keys))
@@ -929,40 +991,24 @@ prof.to.features <- function(profile,
   {
     # init variables
     feature_group <- feature_groups[[i]] |> dplyr::arrange_at("rt") 
-
-    num_features <- nrow(feature_group)
     # The estimation procedure for a single peak
     # Defines the dataframe containing median_mz, median_rt, sd1, sd2, and area
-    if (num_features < 2) {
-      time_weights <- all_diff_mean_rts[which(base.curve[, "base.curve"] %in% feature_group[2])]
-      rt_peak_shape <- c(feature_group[1], feature_group[2], NA, NA, feature_group[3] * time_weights)
-      peak_parameters <- rbind(peak_parameters, rt_peak_shape)
-    } else {
-      # find bandwidth for these particular range
-      rt_range <- range(feature_group[, "rt"])
-      bw <- min(max(bandwidth * (max(rt_range) - min(rt_range)), min_bandwidth), max_bandwidth)
-      bw <- seq(bw, 2 * bw, length.out = 3)
-      if (bw[1] > 1.5 * min_bandwidth) {
-        bw <- c(max(min_bandwidth, bw[1] / 2), bw)
-      }
-
-      rt_profile <- compute_chromatographic_profile(feature_group, base.curve)
-      if (shape_model == "Gaussian") {
-        rt_peak_shape <- compute_gaussian_peak_shape(rt_profile, bw, component_eliminate, BIC_factor, aver_diff)
-      } else {
-        rt_peak_shape <- bigauss.mix(rt_profile, sigma_ratio_lim = sigma_ratio_lim, bw = bw, moment_power = moment_power, peak_estim_method = peak_estim_method, eliminate = component_eliminate, BIC_factor = BIC_factor)$param[, c(1, 2, 3, 5)]
-      }
-
-      if (is.null(nrow(rt_peak_shape))) {
-        peak_parameters <- rbind(peak_parameters, c(median(feature_group[, "mz"]), rt_peak_shape))
-      } else {
-        for (m in 1:nrow(rt_peak_shape))
-        {
-          rt_diff <- abs(feature_group[, "rt"] - rt_peak_shape[m, 1])
-          peak_parameters <- rbind(peak_parameters, c(mean(feature_group[which(rt_diff == min(rt_diff)), 1]), rt_peak_shape[m, ]))
-        }
-      }
-    }
+    peak_parameters <- estimate_peak_parameters(
+      feature_group,
+      base.curve,
+      all_diff_mean_rts,
+      peak_parameters,
+      bandwidth,
+      min_bandwidth,
+      max_bandwidth,
+      sigma_ratio_lim,
+      shape_model,
+      peak_estim_method,
+      moment_power,
+      component_eliminate,
+      BIC_factor,
+      aver_diff
+    )
   }
   peak_parameters <- peak_parameters[order(peak_parameters[, "mz"], peak_parameters[, "rt"]), ]
   peak_parameters <- peak_parameters[which(apply(peak_parameters[, c("sd1", "sd2")], 1, min) > sd_cut[1] & apply(peak_parameters[, c("sd1", "sd2")], 1, max) < sd_cut[2]), ]

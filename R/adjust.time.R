@@ -89,32 +89,32 @@ compute_template <- function(extracted_features) {
 
 #' @export
 correct_time <- function(this.feature, template_features, mz_tol_relative, rt_tol_relative) {
-    orig.features <- this.feature
-    template <- unique(template_features$sample_id)[1]
-    j <- unique(this.feature$sample_id)[1]
+  orig.features <- this.feature
+  template <- unique(template_features$sample_id)[1]
+  j <- unique(this.feature$sample_id)[1]
 
-    if (j != template) {
-      this.comb <- compute_comb(template_features, this.feature)
-      sel <- compute_sel(this.comb, mz_tol_relative, rt_tol_relative)
+  if (j != template) {
+    this.comb <- compute_comb(template_features, this.feature)
+    sel <- compute_sel(this.comb, mz_tol_relative, rt_tol_relative)
 
-      if (length(sel) < 20) {
-        stop("too few, aborted")
-      } else {
-        all.ftr.table <- compute_template_adjusted_rt(this.comb, sel, j)
-        # the to be adjusted time
-        this.diff <- all.ftr.table[, 2]
-        # the difference between the true time and the to-be-adjusted time
-        avg_time <- all.ftr.table[, 1] - this.diff
-        this.feature <- compute_corrected_features(this.feature, this.diff, avg_time)
-      }
+    if (length(sel) < 20) {
+      stop("too few, aborted")
+    } else {
+      all.ftr.table <- compute_template_adjusted_rt(this.comb, sel, j)
+      # the to be adjusted time
+      this.diff <- all.ftr.table[, 2]
+      # the difference between the true time and the to-be-adjusted time
+      avg_time <- all.ftr.table[, 1] - this.diff
+      this.feature <- compute_corrected_features(this.feature, this.diff, avg_time)
     }
+  }
 
-    if (sum(is.na(this.feature$rt)) > 0) {
-      this.feature <- fill_missing_values(
-        orig.features,
-        this.feature
-      )
-    }
+  if (sum(is.na(this.feature$rt)) > 0) {
+    this.feature <- fill_missing_values(
+      orig.features,
+      this.feature
+    )
+  }
 
   return(tibble::as_tibble(this.feature, column_name = c("mz", "rt", "sd1", "sd2", "area", "sample_id", "cluster")))
 }

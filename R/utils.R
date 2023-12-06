@@ -81,7 +81,8 @@ register_functions_to_cluster <- function(cluster) {
         'get_mzrange_bound_indices',
         'compute_mass_density',
         'l2normalize',
-        'compute_peaks_and_valleys'
+        'compute_peaks_and_valleys',
+        'estimate_peak_parameters'
     ))
     snow::clusterEvalQ(cluster, library("dplyr"))
     snow::clusterEvalQ(cluster, library("stringr"))
