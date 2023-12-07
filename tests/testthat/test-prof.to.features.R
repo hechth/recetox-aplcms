@@ -67,3 +67,11 @@ patrick::with_parameters_test_that(
     )
   )
 )
+
+
+filename = c("mbr_test0.parquet")
+expected_filename = "mbr_test0_features.parquet"
+sd_cut = c(0.1, 100)
+sigma_ratio_lim = c(0.1, 10)
+shape_model = "bi-Gaussian"
+do.plot = FALSE

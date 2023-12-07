@@ -1010,6 +1010,7 @@ prof.to.features <- function(profile,
       aver_diff
     )
   }
+  browser()
   peak_parameters <- peak_parameters[order(peak_parameters[, "mz"], peak_parameters[, "rt"]), ]
   peak_parameters <- peak_parameters[which(apply(peak_parameters[, c("sd1", "sd2")], 1, min) > sd_cut[1] & apply(peak_parameters[, c("sd1", "sd2")], 1, max) < sd_cut[2]), ]
   rownames(peak_parameters) <- NULL
