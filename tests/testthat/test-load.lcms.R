@@ -67,12 +67,9 @@ testthat::test_that("load.lcms.raw fails if rawrr is not installed correctly.", 
 testthat::test_that("load.lcms.raw reads a raw file correctly", {
   # Arrange: Set up test inputs
   sample_raw_file <- rawrr::sampleFilePath()
-  plan(multicore , workers = 2)
 
   # Act: Execute the function with the test inputs
   actual <- load.lcms.raw(sample_raw_file)
-
-  plan(sequential)
 
   # Assert: Verify the function output matches expected results
   testthat::expect_equal(nrow(actual), 30689)
