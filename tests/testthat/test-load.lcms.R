@@ -67,9 +67,12 @@ testthat::test_that("load.lcms.raw fails if rawrr is not installed correctly.", 
 testthat::test_that("load.lcms.raw reads a raw file correctly", {
   # Arrange: Set up test inputs
   sample_raw_file <- rawrr::sampleFilePath()
+  plan(multicore , workers = 2)
 
   # Act: Execute the function with the test inputs
   actual <- load.lcms.raw(sample_raw_file)
+
+  plan(sequential)
 
   # Assert: Verify the function output matches expected results
   testthat::expect_equal(nrow(actual), 30689)
@@ -77,4 +80,14 @@ testthat::test_that("load.lcms.raw reads a raw file correctly", {
   testthat::expect_equal(length(actual$mz), 30689)
   testthat::expect_equal(length(actual$rt), 30689)
   testthat::expect_equal(length(actual$intensities), 30689)
+})
+
+testthat::test_that("load.lcms.raw correctly removes 0 intensity values with future.apply parallelism", {
+  filename <- file.path("..", "testdata", "input", "8_qc_no_dil_milliq.raw")
+
+  plan(multicore, workers = 4)
+  actual <- load.lcms.raw(filename, chunk_size = 100)
+  plan(sequential)
+
+  testthat::expect_true(all(actual$intensities > 0), "All intensity values should be greater than 0.")
 })

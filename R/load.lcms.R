@@ -67,15 +67,21 @@ load.lcms <- function(filename) {
   return(features)
 }
 
+#' Process a chunk of spectra and return a list of m/z, rt, and intensities.
+#'#' @param spectra A list of spectra, where each spectrum is a list containing m/z and intensity values.
+#' @param start_times A vector of start times corresponding to each spectrum.
+#' @return A list of lists, where each inner list contains m/z, rt, and intensities for a spectrum.
+#' @export
 process_chunk <- function(spectra, start_times) {
   lapply(seq_along(spectra), function(j) {
     spectrum <- spectra[[j]]
     n <- length(spectrum$mZ)
-    list(
+    points <- tibble::tibble(
       mz = spectrum$mZ,
       rt = rep(start_times[j], n),
       intensities = spectrum$intensity
     )
+    return(dplyr::filter(points, intensities > 0))
   })
 }
 
@@ -93,8 +99,10 @@ process_chunk <- function(spectra, start_times) {
 #' @import rawrr
 #' @import tibble
 #' @import purrr
+#' @import future.apply
+#' @import dplyr
 #' @export
-load.lcms.raw <- function(filename, chunk_size = 200) {
+load.lcms.raw <- function(filename, chunk_size = 100) {
   # Check if the rawrr package is installed
   if (!requireNamespace("rawrr", quietly = TRUE)) {
     stop("The 'rawrr' package is required but not installed. Please install it with install.packages('rawrr').")
@@ -115,16 +123,14 @@ load.lcms.raw <- function(filename, chunk_size = 200) {
   n_scans <- length(idx$scan)
   chunk_starts <- seq(1, n_scans, by = chunk_size)
 
-  results <- lapply(chunk_starts, function(start) {
+  results <- future.apply::future_lapply(chunk_starts, function(start) {
     end <- min(start + chunk_size - 1, n_scans)
     scans_to_load <- idx$scan[start:end]
     spectra <- rawrr::readSpectrum(filename, scan = scans_to_load)
     process_chunk(spectra, idx$StartTime[start:end])
   })
 
-  features <- purrr::transpose(unlist(results, recursive = FALSE)) |> 
-    purrr::map(~ unlist(.x, use.names = FALSE)) |>
-    tibble::as_tibble()
+  features <- dplyr::bind_rows(results)
 
   return(features)
 }
