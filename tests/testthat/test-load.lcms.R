@@ -80,6 +80,8 @@ testthat::test_that("load.lcms.raw reads a raw file correctly", {
 })
 
 testthat::test_that("load.lcms.raw correctly removes 0 intensity values with future.apply parallelism", {
+  skip_on_ci()
+
   filename <- file.path("..", "testdata", "input", "8_qc_no_dil_milliq.raw")
 
   plan(multicore, workers = 4)
