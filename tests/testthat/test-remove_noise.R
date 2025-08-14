@@ -21,8 +21,8 @@ patrick::with_parameters_test_that(
     expected_path <- file.path(testdata, "filtered", paste0(.test_name, ".parquet"))
 
     # exclude last column from comparison as there lies the stochastic nature
-    expected <- arrow::read_parquet(expected_path) |> dplyr::select(-group_number) |> dplyr::arrange_at(c("mz", "rt"))
     actual <- sut |> dplyr::select(-group_number) |> dplyr::arrange_at(c("mz", "rt"))
+    expected <- arrow::read_parquet(expected_path) |> dplyr::select(-group_number) |> dplyr::arrange_at(c("mz", "rt"))
 
     expect_equal(actual, expected)
   },
@@ -72,6 +72,15 @@ patrick::with_parameters_test_that(
       cache = FALSE,
       ci_skip = FALSE
     )
+    # thermo_raw_profile = list(
+    #   filename = c("8_qc_no_dil_milliq.raw"),
+    #   mz_tol = 5e-06,
+    #   min_pres = 0.8,
+    #   min_run = 1,
+    #   intensity_weighted = FALSE,
+    #   cache = FALSE,
+    #   ci_skip = TRUE
+    # )
   )
 )
 
@@ -133,4 +142,28 @@ test_that("remove noise really really works", {
 
   diffs <- sut |> group_by(group_number) |> arrange_at("rt") |> summarise(max_diff = max(abs(diff(rt))))
   expect_true(all(diffs$max_diff <= threshold))
+})
+
+test_that("remove noise on raw with parallel workers works", {
+  testdata <- file.path("..", "testdata")
+  input_path <- file.path(testdata, "input", "8_qc_no_dil_milliq.raw")
+
+  plan(multicore, workers = 4)
+  sut <- remove_noise(
+    input_path,
+    min_pres = 0.8,
+    min_run = 1,
+    mz_tol = 5e-06,
+    baseline_correct = 0.0,
+    baseline_correct_noise_percentile = 0.05,
+    intensity_weighted = FALSE,
+    grouping_threshold = 2,
+    do.plot = FALSE,
+    cache = FALSE
+  )
+  plan(sequential)
+
+  expected <- readRDS(file.path(testdata, "filtered", "thermo_raw_profile_threshold_summary.rds"))
+  actual <- sut |> dplyr::select(-group_number) |> dplyr::arrange_at(c("mz", "rt"))
+  expect_equal(summary(actual), expected)
 })

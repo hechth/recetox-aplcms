@@ -31,3 +31,4 @@ dependencies:
   - r-plyr
   - bioconductor-rawrr
   - r-purrr
+  - r-future.apply

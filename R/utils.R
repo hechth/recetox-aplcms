@@ -8,6 +8,7 @@ register_functions_to_cluster <- function(cluster) {
         'prof.to.features',
         'load.lcms',
         'load.lcms.raw',
+        'process_chunk',
         'adaptive.bin',
         'add_feature_ids',
         'find.turn.point',
