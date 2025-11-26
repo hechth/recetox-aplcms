@@ -84,6 +84,7 @@ semi.sup <- function(
     min.exp=2,
     min.pres=0.5,
     min.run=12,
+    max.run=Inf,
     mz.tol=1e-5,
     baseline.correct.noise.percentile=0.05,
     shape.model="bi-Gaussian",
@@ -107,7 +108,8 @@ semi.sup <- function(
     new.feature.min.count=2,
     recover.min.count=3,
     intensity.weighted=FALSE,
-    sample_names = NA)
+    sample_names = NA,
+    grouping.threshold = Inf)
 {
     setwd(folder)
     files<-files[order(files)]
@@ -145,7 +147,7 @@ semi.sup <- function(
                 that.name<-paste(strsplit(tolower(files[j]),"\\.")[[1]][1],suf.prof,".profile",sep="_")
                 
                 processable<-"goodgood"
-                processable<-try(this.prof<-remove_noise(files[j], min_pres=min.pres, min_run=min.run, max_run = max.run, mz_tol=mz.tol, baseline_correct=baseline.correct, baseline_correct_noise_percentile=baseline.correct.noise.percentile, do.plot=FALSE, intensity_weighted=intensity.weighted, cache=FALSE))
+                processable<-try(this.prof<-remove_noise(files[j], min_pres=min.pres, min_run=min.run, max_run = max.run, mz_tol=mz.tol, baseline_correct=baseline.correct, baseline_correct_noise_percentile=baseline.correct.noise.percentile, do.plot=FALSE, intensity_weighted=intensity.weighted, cache=FALSE, grouping_threshold = grouping.threshold))
                 if(substr(processable,1,5)=="Error")
                 {
                     file.copy(from=files[j], to="error_files")

@@ -32,7 +32,8 @@ patrick::with_parameters_test_that(
             baseline_correct_noise_percentile = 0.05,
             intensity_weighted = intensity_weighted,
             do.plot = FALSE,
-            cache = FALSE
+            cache = FALSE,
+            grouping_threshold = Inf
         )
     })
     

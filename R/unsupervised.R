@@ -134,7 +134,8 @@ unsupervised <- function(
   recover_min_count = 3,
   intensity_weighted = FALSE,
   do_plot = FALSE,
-  cluster = 4
+  cluster = 4,
+  grouping_threshold = Inf
 ) {
   if (!is(cluster, 'cluster')) {
     cluster <- parallel::makeCluster(cluster)
@@ -161,7 +162,8 @@ unsupervised <- function(
           baseline_correct_noise_percentile = baseline_correct_noise_percentile,
           intensity_weighted = intensity_weighted,
           do.plot = do_plot,
-          cache = FALSE
+          cache = FALSE,
+          grouping_threshold = grouping_threshold
       )
   })
   

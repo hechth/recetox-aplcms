@@ -75,7 +75,7 @@ remove_noise <- function(filename,
                      intensity_weighted,
                      do.plot,
                      cache,
-                     grouping_threshold = Inf) {
+                     grouping_threshold) {
   raw.data <- load_file(filename)
 
   raw.prof <- adaptive.bin(

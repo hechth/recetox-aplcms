@@ -16,7 +16,8 @@ patrick::with_parameters_test_that(
       baseline_correct_noise_percentile = 0.05,
       intensity_weighted = intensity_weighted,
       do.plot = FALSE,
-      cache = cache
+      cache = cache,
+      grouping_threshold = Inf
     )
 
     expected_path <- file.path(testdata, "filtered", paste0(.test_name, ".parquet"))
