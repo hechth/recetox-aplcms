@@ -108,7 +108,7 @@ run_filter <- function(newprof,
 
   # compute elution profile length for each EIC group, and filter accordingly
   results <- dplyr::group_by(newprof, grps) |>
-    dplyr::filter(n() >= min_count_run && abs(span(rt)) >= min_run && abs(span(rt)) <= max_run) |>
+    dplyr::filter(n() >= min_count_run && span(rt) >= min_run && span(rt) <= max_run) |>
     dplyr::ungroup() |>
     dplyr::rename(group_number = grps)
 
