@@ -1,0 +1,17 @@
+name: callgraph
+channels:
+  - conda-forge
+  - bioconda
+  - r
+  - defaults
+dependencies:
+  - r-base =4.2
+  - r-devtools
+  - radian
+  - r-xml
+  - bioconductor-rgraphviz
+  - r-igraph
+  - r-recetox-aplcms
+# remotes::install_github("https://github.com/duncantl/CodeDepends")
+# remotes::install_github("https://github.com/nick-ulle/rstatic")
+# remotes::install_github("https://github.com/duncantl/CodeAnalysis")
